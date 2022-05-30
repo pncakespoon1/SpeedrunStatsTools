@@ -3,7 +3,8 @@ import cv2
 FPS = 30
 FRAME_SKIP = FPS
 dsize = (1920, 1080)
-letter = "i"
+letter = "j"
+resize_to_bt = False
 
 
 def download_frames(file):
@@ -18,7 +19,8 @@ def download_frames(file):
 
         _, frame = video.retrieve()
         frame = cv2.resize(frame, dsize)
-        frame = frame[200:880, 630:1290]
+        if resize_to_bt:
+            frame = frame[200:880, 630:1290]
         cv2.imwrite("D:/ResetEfficiency/nn_images/unsorted_images" + "/frame" + letter + str(cur_frame) + ".png", frame)
         cv2.imshow('window', frame)
         if cv2.waitKey(1) == ord('q'):
@@ -28,4 +30,4 @@ def download_frames(file):
     cv2.destroyAllWindows()
 
 
-download_frames("D:/ResetEfficiency/vods/Chez1.mp4")
+download_frames("D:/ResetEfficiency/vods/0023semperzz.mp4")
