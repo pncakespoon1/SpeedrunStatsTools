@@ -18,6 +18,9 @@ dataset = []
 gc_sheets = pygsheets.authorize(service_file=path1 + "credentials.json")
 sh = gc_sheets.open('BGSS classification')
 wks = sh[0]
+ocean_types = ['none', 'warm', 'lukewarm', 'normal', 'frozen']
+trees_types = ['yes', 'no']
+beach_types = ['none', 'normal_coast', 'snowy_coast', 'island']
 
 
 def make_model(output_neurons):
@@ -57,9 +60,9 @@ def make_dataset(type):
 
     for input1, input2, input3, input4 in dataset:
         img_list.append(input1)
-        ocean_list.append(input2)
-        trees_list.append(input3)
-        beach_list.append(input4)
+        ocean_list.append(ocean_types.index(input2))
+        trees_list.append(trees_types.index(input3))
+        beach_list.append(beach_types.index(input4))
 
     img_list = np.array(img_list)
     ocean_list = np.array(ocean_list)
