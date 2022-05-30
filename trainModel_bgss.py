@@ -15,7 +15,9 @@ bs = 25
 epoch_num = 14
 max_images = 1848
 dataset = []
-
+gc_sheets = pygsheets.authorize(service_file=path1 + "credentials.json")
+sh = gc_sheets.open('BGSS classification')
+wks = sh[0]
 
 
 def make_model(output_neurons):
@@ -33,8 +35,13 @@ def make_model(output_neurons):
 
 def make_dataset(type):
     dataset = []
-    X = []
-    Y = []
+    img_list = []
+    ocean_list = []
+    trees_list = []
+    beach_list = []
+    ocean = wks.get_col(column=1, returnas='matrix', include_tailing_empty=False)
+    trees = wks.get_col(column=2, returnas='matrix', include_tailing_empty=False)
+    beach = wks.get_col(column=3, returnas='matrix', include_tailing_empty=False)
     images = os.listdir(path1 + "nn_images/spawn_image_classification/" + type + "/unanalyzed")
     for image in images:
         error_flag = False
@@ -46,13 +53,26 @@ def make_dataset(type):
                 error_flag = True
             if not error_flag:
                 img = cv2.imread(path1 + "nn_images/bt_identification/" + type + "/unanalyzed/" + image)
+                dataset.append((img, ocean[int(image)], trees[int(image)], beach[int(image)]))
 
+    for input1, input2, input3, input4 in dataset:
+        img_list.append(input1)
+        ocean_list.append(input2)
+        trees_list.append(input3)
+        beach_list.append(input4)
+
+    img_list = np.array(img_list)
+    ocean_list = np.array(ocean_list)
+    trees_list = np.array(trees_list)
+    beach_list = np.array(beach_list)
+
+    return img_list, ocean_list, trees_list, beach_list
 
 
 def train_models():
     modelOcean = make_model(5)
     modelTrees = make_model(2)
-    modelBeachType = make_model(3)
+    modelBeachType = make_model(4)
     X_train, ocean_train, trees_train, beachType_train = make_dataset("train_images")
     X_test, ocean_test, trees_test, beachType_test = make_dataset("test_images")
     classifications = [{'model': modelOcean, 'training_labels': ocean_train, 'testing_labels': ocean_test, 'name': 'modelOcean'},
