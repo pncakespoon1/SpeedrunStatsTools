@@ -5,7 +5,6 @@ import numpy as np
 import cv2
 import math
 import pygsheets
-import pandas as pd
 import subprocess
 import re
 from pathlib import Path
@@ -54,6 +53,22 @@ def frames_to_time(list1, start_time):
         list1[i] = date_and_time
 
     return list1
+
+
+def get_image_wall(rows, columns, instances, img):
+    new_img_array = []
+    column_size = 1920/columns
+    row_size = 1080/rows
+    count = 0
+    for row in range(rows):
+        new_img_array.append([])
+        for column in range(columns()):
+            if count < instances:
+                new_img = img[(row * row_size):((row+1) * row_size), (column * column_size):((column+1) * column_size)]
+                new_img_array[row].append(new_img)
+                count += 1
+
+    return new_img_array
 
 
 def download_frames(file):
