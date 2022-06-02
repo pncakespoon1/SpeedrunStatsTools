@@ -12,6 +12,7 @@ import datetime
 from datetime import timedelta
 import gc
 import mmap
+import json
 
 
 path1 = "D:/ResetEfficiency/"
@@ -19,13 +20,12 @@ path1 = "D:/ResetEfficiency/"
 dsize = (1920, 1080)
 max_images = 2000
 bt_threshold = 0.9
-username_list = ["makattak11", "7rowl", "semperzz", "silverrruns"]
-FPS_list = [50, 60, 60, 60]
-timezone_list = [timedelta(hours=-5), timedelta(hours=2), timedelta(hours=-6), timedelta(hours=-8)]
-uses_new_tracker = [True, False, True, False]
 max_videos_per_user = 10
 model = tf.keras.models.load_model(path1 + 'models/model1')
 user_index = -1
+
+jsonFile = open(path1 + "runners.json")
+runners = json.load(jsonFile)
 
 
 def download_vod(url, name):
@@ -41,7 +41,7 @@ def frames_to_time(list1, start_time):
                                        second=int(start_time[17:19]))
     for i in range(len(list1)):
         list1[i] = str(list1[i])
-        list1[i] = math.floor(int(list1[i][:len(list1[i])-4]) / FPS_list[user_index])
+        list1[i] = math.floor(int(list1[i][:len(list1[i])-4]) / runners[user_index]['fps'])
         seconds = list1[i]
         seconds = seconds % (24 * 3600)
         hour = seconds // 3600
@@ -49,7 +49,7 @@ def frames_to_time(list1, start_time):
         minutes = seconds // 60
         seconds %= 60
         timestamp = timedelta(hours=hour, minutes=minutes, seconds=seconds)
-        date_and_time = start_datetime + timezone_list[user_index] + timestamp
+        date_and_time = start_datetime + runners[user_index]['timezone'] + timestamp
         list1[i] = date_and_time
 
     return list1
@@ -79,7 +79,7 @@ def download_frames(file):
         cur_frame += 1
         if not video.grab():
             break
-        if cur_frame % FPS_list[user_index]:
+        if cur_frame % runners[user_index]['fps']:
             continue
 
         _, frame = video.retrieve()
@@ -126,8 +126,8 @@ def make_dataset():
 
     return (X, Y)
 
-def get_timestamps(vodpath, start_time):
 
+def get_timestamps(vodpath, start_time):
     download_frames(vodpath)
     bt_timestamps = []
     while len(os.listdir(path1 + "frames")) != 0:
@@ -150,8 +150,10 @@ def write_to_gsheets(sheetname, vodpath, start_time):
     sh = gc_sheets.open(sheetname)
     wks = sh[1]
     column_num = 38
-    if uses_new_tracker[user_index]:
+    if runners[user_index]['tracker'] == 2:
         column_num = 41
+    if runners[user_index]['tracker'] == 3:
+        column_num = 31
     bt_timestamps = get_timestamps(vodpath, start_time)
     tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=False)
     for i in range(1, len(tracker_timestamps) - 1):
@@ -208,6 +210,9 @@ def get_streams_info(usernames):
 
 
 def download_all_vods():
+    username_list = []
+    for runner in runners:
+        username_list.append(runner['twitch_name'])
     usernames, links, start_times = get_streams_info(username_list)
     for i in range(len(links)):
         download_vod(links[i], str(i).zfill(4) + usernames[i])
@@ -224,7 +229,9 @@ def download_all_vods():
 
 def analyze_all_vods():
     global user_index
-    #usernames, start_times = download_all_vods()
+    username_list = []
+    for runner in runners:
+        username_list.append(runner['twitch_name'])
     usernames = []
     start_times = []
     total_lines = 0

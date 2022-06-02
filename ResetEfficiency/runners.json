@@ -1,0 +1,22 @@
+[
+	{
+		"twitch_name": "semperzz",
+		"sheet_name": "semperzz",
+		"tracker": 3,
+		"fps": 60,
+		"timezone": -6,
+		"instances": 9,
+		"rows": 3,
+		"columns": 3
+	},
+	{
+		"twitch_name": "7rowl",
+		"sheet_name": "7rowl",
+		"tracker": 1,
+		"fps": 60,
+		"timezone": 2,
+		"instances": 0,
+		"rows": 0,
+		"columns": 0
+	}
+]
