@@ -19,3 +19,12 @@ def get_sheet(sheetname):
     return wks
 
 
+def get_distribution(sheetname, colname):
+    wks = get_sheet(sheetname)
+    headers = wks.get_row(row=0, returnas='matrix', include_tailing_empty=False)
+    column = wks.get_col(col = headers.index(colname), returnas='matrix', include_tailing_empty=False)
+    column.pop(0)
+    for cell in column:
+        if cell == '':
+            column.remove('')
+    return column
