@@ -7,11 +7,15 @@ This is the heart of the program, it downloads a bunch of vods and writes variou
 # makeImages.py
 This script downloads a frame from every second of a vod specified to the unsorted_images folder. It requires a vod in the vods folder.
 
+# breakWalls.py
+This script "uncollages" wall images
+
 # trainModel_bgss.py 
 This script trains a model for classifying specific traits of spawn images. It requires images to be sorted in the designated folders in the spawn_image_classification folder. It stores the models in the models folder.
 
 # trainModel_bt.py
 This script trains a model for identifying buried treasure chest loot guis. It requires images to be sorted in the designated folders in the bt_identification folder. It stores the model in the models folder.
 
-#trainModel_wall.py
+# trainModel_wall.py
 This script trains a model for identifying wall interfaces. It requires images to be sorted in the designated folders in the wall_identification folder. It stores the model in the models folder.
+
