@@ -2,13 +2,13 @@
 Tools which I'm working on to track stats of runs beyond what the typical tracker does
 
 # Links
-Rawalle: https://github.com/joe-ldp/Rawalle
+[Rawalle](https://github.com/joe-ldp/Rawalle)
 
-Grind-Simulator: https://github.com/Sharpieman20/grind-simulator
+[Grind-Simulator](https://github.com/Sharpieman20/grind-simulator)
 
-Specnr's Reset Tracker: https://github.com/Specnr/ResetTracker
+[Specnr's Reset Tracker](https://github.com/Specnr/ResetTracker)
 
-Talking Mime's Reset Tracker: https://github.com/TheTalkingMime/ResetTracker
+[Talking Mime's Reset Tracker](https://github.com/TheTalkingMime/ResetTracker)
 
 
 # Dependencies
@@ -38,9 +38,9 @@ This script trains a model for identifying buried treasure chest loot guis. It r
 This script trains a model for identifying wall interfaces. It requires images to be sorted in the designated folders in the wall_identification folder. It stores the model in the models folder.
 
 # Credits
-Emily
-Ravalle
-Specnr
-Pokemon
-TalkingMime
-Lemon
+- Emily
+- Ravalle
+- Specnr
+- Pokemon
+- TalkingMime
+- Lemon
