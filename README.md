@@ -11,7 +11,11 @@ Specnr's Reset Tracker: https://github.com/Specnr/ResetTracker
 Talking Mime's Reset Tracker: https://github.com/TheTalkingMime/ResetTracker
 
 
+# Dependencies
+pillow, tensorflow, numpy, cv2, pygsheets, twitch-dl, seaborn, scipy, pandas, matplotlib, keras-tuner, keras, pathlib
 
+# Requirements
+ffmpeg.exe and credentials.json in the folder
 
 # analyzeVod.py
 This is the heart of the program, it downloads a bunch of vods and writes various stats to a google sheet. It requires models in the models folder to detect buried treasures.
