@@ -24,7 +24,7 @@ for i in range(len(nether_list)):
         nether_counter += 1
     if stronghold_list[i] != '':
         stronghold_counter += 1
-        nether_split_list.append(str(datetime.strptime(stronghold_list[i], '%H:%M:%S') - datetime.strptime(nether_list[i], '%H:%M:%S')))
+        nether_split_list.append("0" + str(datetime.strptime(stronghold_list[i], '%H:%M:%S') - datetime.strptime(nether_list[i], '%H:%M:%S')) + ".000")
 
 conversion_rate = stronghold_counter/nether_counter
 dict1 = {'conversion_rate': conversion_rate, 'distribution': nether_split_list}
