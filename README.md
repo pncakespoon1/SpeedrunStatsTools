@@ -10,6 +10,10 @@ Tools which I'm working on to track stats of runs beyond what the typical tracke
 
 [Talking Mime's Reset Tracker](https://github.com/TheTalkingMime/ResetTracker)
 
+[Efficiency Score Calculator](https://docs.google.com/spreadsheets/d/1lN_5Jbr5WdphUS2IR3Cc_LH2BSCXf7hJK5MGt6XsU-M/edit#gid=0)
+
+[Stats Analysis Website](https://reset-analytics.vercel.app)
+
 
 # Dependencies
 pillow, tensorflow, numpy, cv2, pygsheets, twitch-dl, seaborn, scipy, pandas, matplotlib, keras-tuner, keras, pathlib
