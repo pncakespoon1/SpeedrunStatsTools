@@ -64,3 +64,11 @@ def get_nph_and_entryAvg(sheetname, uses_spec_tracker):
     nph = nether_count / hours
     avgEnter = entry_sum / nether_count
     return nph, avgEnter
+
+print(get_nph_and_entryAvg('silverrruns', False))
+nph, avgEnter = get_nph_and_entryAvg('silverrruns', False)
+avgEnter = avgEnter / timedelta(seconds=1)
+dict = {'nph': [nph], 'avgEnter': [avgEnter]}
+
+sns.scatterplot(x='nph', y='avgEnter', data=dict)
+plt.savefig(path1 + 'figures/plot.png', dpi=1000)
