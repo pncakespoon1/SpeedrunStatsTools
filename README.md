@@ -3,8 +3,11 @@ Tools which I'm working on to track stats of runs beyond what the typical tracke
 
 # Links
 Rawalle: https://github.com/joe-ldp/Rawalle
+
 Grind-Simulator: https://github.com/Sharpieman20/grind-simulator
+
 Specnr's Reset Tracker: https://github.com/Specnr/ResetTracker
+
 Talking Mime's Reset Tracker: https://github.com/TheTalkingMime/ResetTracker
 
 
