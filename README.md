@@ -35,3 +35,10 @@ This script trains a model for identifying buried treasure chest loot guis. It r
 # trainModel_wall.py
 This script trains a model for identifying wall interfaces. It requires images to be sorted in the designated folders in the wall_identification folder. It stores the model in the models folder.
 
+# Credits
+Emily
+Ravalle
+Specnr
+Pokemon
+TalkingMime
+Lemon
