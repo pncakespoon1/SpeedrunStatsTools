@@ -15,7 +15,7 @@ Tools which I'm working on to track stats of runs beyond what the typical tracke
 pillow, tensorflow, numpy, cv2, pygsheets, twitch-dl, seaborn, scipy, pandas, matplotlib, keras-tuner, keras, pathlib
 
 # Requirements
-ffmpeg.exe and credentials.json in the folder
+ffmpeg.exe and credentials.json in the folder, cuda
 
 # Scripts
 
