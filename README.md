@@ -1,6 +1,15 @@
 # SpeedrunStatsTools
 Tools which I'm working on to track stats of runs beyond what the typical tracker does
 
+# Links
+Rawalle: https://github.com/joe-ldp/Rawalle
+Grind-Simulator: https://github.com/Sharpieman20/grind-simulator
+Specnr's Reset Tracker: https://github.com/Specnr/ResetTracker
+Talking Mime's Reset Tracker: https://github.com/TheTalkingMime/ResetTracker
+
+
+
+
 # analyzeVod.py
 This is the heart of the program, it downloads a bunch of vods and writes various stats to a google sheet. It requires models in the models folder to detect buried treasures.
 
