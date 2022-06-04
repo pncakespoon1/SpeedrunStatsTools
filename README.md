@@ -48,3 +48,4 @@ This script trains a model for identifying wall interfaces. It requires images t
 - Pokemon
 - TalkingMime
 - Lemon
+- Sharpie
