@@ -35,6 +35,7 @@ def get_nph_and_entryAvg(sheetname, uses_spec_tracker):
     one_hour = timedelta(hours=1)
     wks = get_sheet(sheetname)
     headers = wks.get_row(row=1, returnas='matrix', include_tailing_empty=False)
+    print(headers)
     nether_col = wks.get_col(col=headers.index("Nether") + 1, returnas='matrix', include_tailing_empty=True)
     nether_col.pop(0)
     rta_col = wks.get_col(col=headers.index("RTA") + 1, returnas='matrix', include_tailing_empty=True)
@@ -48,6 +49,7 @@ def get_nph_and_entryAvg(sheetname, uses_spec_tracker):
     for i in range(len(nether_col)):
         nether_cell = nether_col[i]
         rta_cell = rta_col[i]
+        print(rta_cell)
         rta_cell = timedelta(hours=int(rta_cell[0:1]), minutes=int(rta_cell[2:4]), seconds=int(rta_cell[5:7]))
         if uses_spec_tracker:
             rta_since_prev_cell = rta_since_prev_col[i]
@@ -65,10 +67,24 @@ def get_nph_and_entryAvg(sheetname, uses_spec_tracker):
     avgEnter = entry_sum / nether_count
     return nph, avgEnter
 
-print(get_nph_and_entryAvg('silverrruns', False))
-nph, avgEnter = get_nph_and_entryAvg('silverrruns', False)
-avgEnter = avgEnter / timedelta(seconds=1)
-dict = {'nph': [nph], 'avgEnter': [avgEnter]}
+def makeplots():
+    nph_list = []
+    avgEnter_list = []
+    sheetname_list = []
+    for runner in runners:
+        for i in range(len(runner['sheet_names'])):
+            uses_spec_tracker = True
+            if runner['tracker_versions'][i] == 1:
+                uses_spec_tracker = False
+            nph, avgEnter = get_nph_and_entryAvg(runner['sheet_names'][i], uses_spec_tracker)
+            avgEnter = avgEnter / timedelta(seconds=1)
+            nph_list.append(nph)
+            avgEnter_list.append(avgEnter)
+            sheetname_list.append(runner['sheet_names'][i])
 
-sns.scatterplot(x='nph', y='avgEnter', data=dict)
-plt.savefig(path1 + 'figures/plot.png', dpi=1000)
+    dict = {'nph': nph_list, 'avgEnter': avgEnter_list, 'sheetnames': sheetname_list}
+
+    sns.scatterplot(x='nph', y='avgEnter', data=dict)
+    plt.savefig(path1 + 'figures/plot.png', dpi=1000)
+
+makeplots()

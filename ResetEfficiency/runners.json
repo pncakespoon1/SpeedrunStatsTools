@@ -1,8 +1,8 @@
 [
 	{
 		"twitch_name": "semperzz",
-		"sheet_name": "semperzz",
-		"tracker": 3,
+		"sheet_names": ["semperzz"],
+		"tracker_versions": [3],
 		"fps": 60,
 		"timezone": -6,
 		"instances": 9,
@@ -10,9 +10,39 @@
 		"columns": 3
 	},
 	{
+		"twitch_name": "makattak11",
+		"sheet_names": ["makattak11"],
+		"tracker_versions": [2],
+		"fps": 50,
+		"timezone": -5,
+		"instances": 6,
+		"rows": 2,
+		"columns": 3
+	},
+	{
+		"twitch_name": "zylenox",
+		"sheet_names": ["zylenox"],
+		"tracker_versions": [1],
+		"fps": 60,
+		"timezone": -6,
+		"instances": 6,
+		"rows": 2,
+		"columns": 3
+	},
+	{
+		"twitch_name": "evankae",
+		"sheet_names": ["evankae"],
+		"tracker_versions": [2],
+		"fps": 60,
+		"timezone": -6,
+		"instances": 12,
+		"rows": 3,
+		"columns": 4
+	},
+	{
 		"twitch_name": "7rowl",
-		"sheet_name": "7rowl",
-		"tracker": 1,
+		"sheet_names": ["7rowl"],
+		"tracker_versions": [1],
 		"fps": 60,
 		"timezone": 2,
 		"instances": 0,
