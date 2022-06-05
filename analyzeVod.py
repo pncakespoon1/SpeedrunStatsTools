@@ -145,41 +145,42 @@ def get_timestamps(vodpath, start_time):
     return bt_timestamps
 
 
-def write_to_gsheets(sheetname, vodpath, start_time):
+def write_to_gsheets(sheetnames, vodpath, start_time):
     gc_sheets = pygsheets.authorize(service_file=path1 + "credentials.json")
-    sh = gc_sheets.open(sheetname)
-    wks = sh[1]
-    column_num = 38
-    if runners[user_index]['tracker'] == 2:
-        column_num = 41
-    if runners[user_index]['tracker'] == 3:
-        column_num = 31
-    bt_timestamps = get_timestamps(vodpath, start_time)
-    tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=False)
-    for i in range(1, len(tracker_timestamps) - 1):
-        flag = False
-        tracker_timestamp_lower = str(tracker_timestamps[i + 1])
-        tracker_timestamp_lower_datetime = datetime.datetime(year=int(tracker_timestamp_lower[0:4]),
-                                                             month=int(tracker_timestamp_lower[5:7]),
-                                                             day=int(tracker_timestamp_lower[8:10]),
-                                                             hour=int(tracker_timestamp_lower[11:13]),
-                                                             minute=int(tracker_timestamp_lower[14:16]),
-                                                             second=int(tracker_timestamp_lower[17:19])
-                                                             )
-        tracker_timestamp_upper = str(tracker_timestamps[i])
-        tracker_timestamp_upper_datetime = datetime.datetime(year=int(tracker_timestamp_upper[0:4]),
-                                                             month=int(tracker_timestamp_upper[5:7]),
-                                                             day=int(tracker_timestamp_upper[8:10]),
-                                                             hour=int(tracker_timestamp_upper[11:13]),
-                                                             minute=int(tracker_timestamp_upper[14:16]),
-                                                             second=int(tracker_timestamp_upper[17:19])
-                                                             )
-        for bt_timestamp in bt_timestamps:
-            if tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime:
-                if not flag:
-                    wks.update_value((i+2, column_num), str(bt_timestamp))
-                bt_timestamps.remove(bt_timestamp)
-                flag = True
+    for sheetname in sheetnames:
+        sh = gc_sheets.open(sheetname)
+        wks = sh[1]
+        column_num = 38
+        if runners[user_index]['tracker_versions'][sheetnames.index(sheetname)] == 2:
+            column_num = 41
+        if runners[user_index]['tracker_versions'][sheetnames.index(sheetname)] == 3:
+            column_num = 31
+        bt_timestamps = get_timestamps(vodpath, start_time)
+        tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=False)
+        for i in range(1, len(tracker_timestamps) - 1):
+            flag = False
+            tracker_timestamp_lower = str(tracker_timestamps[i + 1])
+            tracker_timestamp_lower_datetime = datetime.datetime(year=int(tracker_timestamp_lower[0:4]),
+                                                                 month=int(tracker_timestamp_lower[5:7]),
+                                                                 day=int(tracker_timestamp_lower[8:10]),
+                                                                 hour=int(tracker_timestamp_lower[11:13]),
+                                                                 minute=int(tracker_timestamp_lower[14:16]),
+                                                                 second=int(tracker_timestamp_lower[17:19])
+                                                                 )
+            tracker_timestamp_upper = str(tracker_timestamps[i])
+            tracker_timestamp_upper_datetime = datetime.datetime(year=int(tracker_timestamp_upper[0:4]),
+                                                                 month=int(tracker_timestamp_upper[5:7]),
+                                                                 day=int(tracker_timestamp_upper[8:10]),
+                                                                 hour=int(tracker_timestamp_upper[11:13]),
+                                                                 minute=int(tracker_timestamp_upper[14:16]),
+                                                                 second=int(tracker_timestamp_upper[17:19])
+                                                                 )
+            for bt_timestamp in bt_timestamps:
+                if tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime:
+                    if not flag:
+                        wks.update_value((i+2, column_num), str(bt_timestamp))
+                    bt_timestamps.remove(bt_timestamp)
+                    flag = True
 
 
 def get_twitch_id(username):
@@ -246,7 +247,6 @@ def analyze_all_vods():
                 usernames.append(line)
             if i % 5 == 2:
                 start_times.append(line)
-    count3 = 0
     for vodpath in Path(path1 + "vods").glob("*.mp4"):
         parts = list(vodpath.parts)
         vod = parts[len(parts) - 1]
@@ -254,8 +254,7 @@ def analyze_all_vods():
             if username_list[i] in vod:
                 user_index = i
         vod_num = int(vod[0:4])
-        write_to_gsheets(usernames[count3], vodpath, start_times[vod_num])
-        count3 += 1
+        write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[vod_num])
 
 
 analyze_all_vods()

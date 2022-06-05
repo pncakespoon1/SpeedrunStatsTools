@@ -43,7 +43,7 @@ def get_distribution(sheetname, colname):
 def hue_dict():
     dict = {1000: (0, 0, 1)}
     for i in range(0, 293):
-        dict = dict | {float(i): (round((-0.95 * (0.991 ** i) + 0.95), 3), 0, 0)}
+        dict = dict | {float(i): (round(1 - (-0.95 * (0.991 ** i) + 0.95), 3), round((-0.7 * (0.991 ** i) + 0.7), 3), 0)}
     return dict
 
 
