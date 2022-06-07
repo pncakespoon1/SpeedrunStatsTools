@@ -10,6 +10,9 @@ from datetime import datetime
 import math
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import random
+from matplotlib import axes
+from matplotlib import transforms
 
 
 path1 = "D:/ResetEfficiency/"
@@ -40,14 +43,9 @@ def get_distribution(sheetname, colname):
     return column
 
 
-def hue_dict():
-    dict = {1000: (0, 0, 1)}
-    for i in range(0, 293):
-        dict = dict | {float(i): (round(1 - (-0.95 * (0.991 ** i) + 0.95), 3), round((-0.7 * (0.991 ** i) + 0.7), 3), 0)}
-    return dict
-
-
 def get_stats(sheetname, uses_spec_tracker):
+    entry_dist = []
+    randomized_entry_dist = []
     one_hour = timedelta(hours=1)
     wks = get_sheet(sheetname)
     headers = wks.get_row(row=1, returnas='matrix', include_tailing_empty=False)
@@ -76,43 +74,67 @@ def get_stats(sheetname, uses_spec_tracker):
             nether_count += 1
             entry_sum += nether_cell
             rta_sum -= (rta_cell - nether_cell)
+            entry_dist.append((nether_cell) / timedelta(seconds=1))
     hours = rta_sum / one_hour
     nph = nether_count / hours
     avgEnter = entry_sum / nether_count
-    return nph, avgEnter
+    avgEnter = avgEnter / timedelta(seconds=1)
+    for i in range(1000):
+        randomized_entry_dist.append(entry_dist[random.randrange(0, len(entry_dist))])
+    return nph, avgEnter, randomized_entry_dist
 
-def makeplots():
+def makeplots(scatterplot1, histogram1):
     nph_list = []
     avgEnter_list = []
+    entry_dist_list = []
     sheetname_list = []
-    hue_list = []
     size_list = []
+    canvas = []
+    entry_dists_flattened = []
+    entry_dists_flat_labels = []
 
-    for x in range(60, 140):
-        for y in range(90, 150):
-            y = y/1
-            effscore = (x/10) * effscore_keys[1][effscore_keys[0].index(5*(math.floor((target_time - y)/5)))]
-            nph_list.append(x/10)
-            avgEnter_list.append(y)
-            hue_list.append(round(effscore * 10000))
-            size_list.append(1)
     for runner in runners:
         for i in range(len(runner['sheet_names'])):
             uses_spec_tracker = True
             if runner['tracker_versions'][i] == 1:
                 uses_spec_tracker = False
-            nph, avgEnter = get_stats(runner['sheet_names'][i], uses_spec_tracker)
-            avgEnter = avgEnter / timedelta(seconds=1)
+            nph, avgEnter, entry_dist = get_stats(runner['sheet_names'][i], uses_spec_tracker)
             nph_list.append(nph)
             avgEnter_list.append(avgEnter)
+            entry_dist_list.append(entry_dist)
             sheetname_list.append(runner['sheet_names'][i])
-            hue_list.append(1000)
             size_list.append(3)
 
-    dict1 = {'nph': nph_list, 'avgEnter': avgEnter_list, 'hues': hue_list, 'sheetnames': sheetname_list}
-    huedict = hue_dict()
+    if scatterplot1:
+        for x in range(60, 140):
+            canvas.append([])
+            for y in range(90, 150):
+                y = y/1
+                effscore = (x/10) * effscore_keys[1][effscore_keys[0].index(5*(math.floor((target_time - y)/5)))]
+                (canvas[x-60]).append(effscore)
 
-    sns.scatterplot(x='nph', y='avgEnter', hue='hues', palette=huedict, data=dict1, legend=False, sizes=size_list)
-    plt.savefig(path1 + 'figures/plot.png', dpi=1000)
+        dict1 = {'nph': nph_list, 'avgEnter': avgEnter_list, 'sheetname': sheetname_list}
 
-makeplots()
+        x1 = np.linspace(6, 14.0, 60)
+        x2 = np.linspace(90, 150, 80)
+        x, y = np.meshgrid(x1, x2)
+        cm = plt.cm.get_cmap('cividis')
+        fig1, ax1 = plt.subplots(figsize=(6, 4))
+        p1 = plt.contourf(x, y, canvas, levels=1000)
+        p2 = sns.scatterplot(x='nph', y='avgEnter', data=dict1, legend=False, sizes=size_list)
+        plt.savefig(path1 + 'figures/plot1.png', dpi=1000)
+
+    if histogram1:
+        for i in range(len(sheetname_list)):
+            for item in entry_dist_list[i]:
+                if 7 < item < 210:
+                    entry_dists_flattened.append(item)
+                    entry_dists_flat_labels.append(sheetname_list[i])
+
+        dict2 = {'entry_dist': entry_dists_flattened, 'sheetname': entry_dists_flat_labels}
+
+        sns.displot(dict2, x="entry_dist", hue="sheetname", kind='kde')
+        plt.savefig(path1 + 'figures/plot2.png', dpi=1000)
+
+
+makeplots(True, True)
