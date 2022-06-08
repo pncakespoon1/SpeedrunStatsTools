@@ -48,6 +48,8 @@ def get_stats(sheetname, tracker_version):
     print(sheetname)
     entry_dist = []
     randomized_entry_dist = []
+    entry_labels = []
+    randomized_entry_labels = []
     one_hour = timedelta(hours=1)
     wks = get_sheet(sheetname)
     headers = wks.get_row(row=1, returnas='matrix', include_tailing_empty=False)
@@ -55,6 +57,10 @@ def get_stats(sheetname, tracker_version):
     nether_col.pop(0)
     rta_col = wks.get_col(col=headers.index("RTA") + 1, returnas='matrix', include_tailing_empty=True)
     rta_col.pop(0)
+    bt_col = wks.get_col(col=headers.index("BT") + 1, returnas='matrix', include_tailing_empty=True)
+    bt_col.pop(0)
+    shipwreck_col = wks.get_col(col=headers.index("shipwreck") + 1, returnas='matrix', include_tailing_empty=True)
+    shipwreck_col.pop(0)
     if tracker_version in [2, 3]:
         rta_since_prev_col = wks.get_col(col=headers.index("RTA Since Prev") + 1, returnas='matrix', include_tailing_empty=True)
         rta_since_prev_col.pop(0)
@@ -77,13 +83,22 @@ def get_stats(sheetname, tracker_version):
             entry_sum += nether_cell
             rta_sum -= (rta_cell - nether_cell)
             entry_dist.append((nether_cell) / timedelta(seconds=1))
+            if bt_col[i] != '':
+                entry_labels.append('bt')
+            elif shipwreck_col[i] != '':
+                entry_labels.append('shipwreck')
+            else:
+                entry_labels.append('other')
+
     hours = rta_sum / one_hour
     nph = nether_count / hours
     avgEnter = entry_sum / nether_count
     avgEnter = avgEnter / timedelta(seconds=1)
-    for i in range(1000):
-        randomized_entry_dist.append(entry_dist[random.randrange(0, len(entry_dist))])
-    return nph, avgEnter, randomized_entry_dist
+    for i in range(10000):
+        index = random.randrange(0, len(entry_dist))
+        randomized_entry_dist.append(entry_dist[index])
+        randomized_entry_labels.append(entry_labels[index])
+    return nph, avgEnter, randomized_entry_dist, randomized_entry_labels
 
 
 def make_scatterplot1(nph_list, avgEnter_list, sheetname_list):
@@ -122,25 +137,46 @@ def make_histogram1(entry_dist_list):
                     entry_dists_flat_labels.append(sheetname)
             count += 1
 
-        dict2 = {'entry_dist': entry_dists_flattened, 'sheetname': entry_dists_flat_labels}
+        dict1 = {'entry_dist': entry_dists_flattened, 'sheetname': entry_dists_flat_labels}
 
-        sns.kdeplot(data=dict2, x='entry_dist', hue='sheetname', legend=False, bw_adjust=0.9)
+        sns.kdeplot(data=dict1, x='entry_dist', hue='sheetname', legend=False, bw_adjust=0.9)
         plt.savefig(path1 + f'figures/histogram1_{runner_name}.png', dpi=1000)
         plt.close()
+
+
+def make_histogram2(entry_dist_list, entry_labels_list):
+    count = 0
+    for runner in runners:
+        for sheetname in runner['sheet_names']:
+            entry_dist = []
+            entry_labels = []
+            for i in range(len(entry_dist_list[count])):
+                if 7 < entry_dist_list[count][i] < 210:
+                    entry_dist.append(entry_dist_list[count][i])
+                    entry_labels.append(entry_labels_list[count][i])
+
+            count += 1
+            dict1 = {'entry_dist': entry_dist, 'sheetname': entry_labels}
+
+            sns.kdeplot(data=dict1, x='entry_dist', hue='sheetname', legend=False, bw_adjust=0.9)
+            plt.savefig(path1 + f'figures/histogram1_{sheetname}.png', dpi=1000)
+            plt.close()
 
 
 def makeplots(scatterplot1, histogram1):
     nph_list = []
     avgEnter_list = []
     entry_dist_list = []
+    entry_labels_list = []
     sheetname_list = []
 
     for runner in runners:
         for i in range(len(runner['sheet_names'])):
-            nph, avgEnter, entry_dist = get_stats(runner['sheet_names'][i], runner['tracker_versions'][i])
+            nph, avgEnter, entry_dist, entry_labels = get_stats(runner['sheet_names'][i], runner['tracker_versions'][i])
             nph_list.append(nph)
             avgEnter_list.append(avgEnter)
             entry_dist_list.append(entry_dist)
+            entry_labels_list.append(entry_labels)
             sheetname_list.append(runner['sheet_names'][i])
 
     if scatterplot1:
@@ -150,4 +186,4 @@ def makeplots(scatterplot1, histogram1):
         make_histogram1(entry_dist_list)
 
 
-makeplots(False, True)
+makeplots(False, False)

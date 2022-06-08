@@ -49,7 +49,7 @@ def frames_to_time(list1, start_time):
         minutes = seconds // 60
         seconds %= 60
         timestamp = timedelta(hours=hour, minutes=minutes, seconds=seconds)
-        date_and_time = start_datetime + runners[user_index]['timezone'] + timestamp
+        date_and_time = start_datetime + timedelta(hours=runners[user_index]['timezone']) + timestamp
         list1[i] = date_and_time
 
     return list1
