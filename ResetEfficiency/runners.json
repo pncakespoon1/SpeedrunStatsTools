@@ -1,9 +1,9 @@
 [
 	{
 		"twitch_name": "semperzz",
-		"sheet_names": ["semperzz"],
-		"tracker_versions": [3],
-		"sheet_ideologies": ["hybrid"],
+		"sheet_names": ["semperzz1", "semperzz2", "semperzz3", "semperzz4"],
+		"tracker_versions": [2, 2, 2, 3],
+		"sheet_ideologies": ["hybrid", "hybrid", "hybrid", "hybrid"],
 		"fps": 60,
 		"timezone": -6,
 		"instances": 9,
@@ -12,9 +12,9 @@
 	},
 	{
 		"twitch_name": "makattak11",
-		"sheet_names": ["makattak11"],
-		"tracker_versions": [2],
-		"sheet_ideologies": ["hybrid"],
+		"sheet_names": ["makattak111", "makattak112"],
+		"tracker_versions": [2, 2],
+		"sheet_ideologies": ["5rd mapless", "10rd mapless"],
 		"fps": 50,
 		"timezone": -5,
 		"instances": 6,
@@ -23,7 +23,7 @@
 	},
 	{
 		"twitch_name": "zylenox",
-		"sheet_names": ["zylenox"],
+		"sheet_names": ["zylenox1"],
 		"tracker_versions": [1],
 		"sheet_ideologies": ["hybrid"],
 		"fps": 60,
@@ -34,9 +34,9 @@
 	},
 	{
 		"twitch_name": "evankae",
-		"sheet_names": ["evankae"],
-		"tracker_versions": [2],
-		"sheet_ideologies": ["hybrid"],
+		"sheet_names": ["evankae1", "evankae2"],
+		"tracker_versions": [2, 3],
+		"sheet_ideologies": ["hybrid", "hybrid"],
 		"fps": 60,
 		"timezone": -6,
 		"instances": 12,
@@ -45,13 +45,46 @@
 	},
 	{
 		"twitch_name": "7rowl",
-		"sheet_names": ["7rowl"],
+		"sheet_names": ["7rowl1"],
 		"tracker_versions": [1],
-		"sheet_ideologies": ["hybrid"],
+		"sheet_ideologies": ["shipwrecks"],
 		"fps": 60,
 		"timezone": 2,
 		"instances": 0,
 		"rows": 0,
 		"columns": 0
+	},
+	{
+		"twitch_name": "mauvu_",
+		"sheet_names": ["mauvu_1"],
+		"tracker_versions": [2],
+		"sheet_ideologies": ["5rd mapless"],
+		"fps": 60,
+		"timezone": 0,
+		"instances": 9,
+		"rows": 3,
+		"columns": 3
+	},
+	{
+		"twitch_name": "silverrruns",
+		"sheet_names": ["silverrruns1"],
+		"tracker_versions": [1],
+		"sheet_ideologies": ["mapless"],
+		"fps": 60,
+		"timezone": -8,
+		"instances": 9,
+		"rows": 3,
+		"columns": 3
+	},
+	{
+		"twitch_name": "specnr",
+		"sheet_names": ["specnr1"],
+		"tracker_versions": [3],
+		"sheet_ideologies": ["50ed hybrid"],
+		"fps": 60,
+		"timezone": 2,
+		"instances": 9,
+		"rows": 3,
+		"columns": 3
 	}
 ]

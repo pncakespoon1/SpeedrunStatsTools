@@ -44,7 +44,7 @@ def get_distribution(sheetname, colname):
     return column
 
 
-def get_stats(sheetname, uses_spec_tracker):
+def get_stats(sheetname, tracker_version):
     print(sheetname)
     entry_dist = []
     randomized_entry_dist = []
@@ -55,7 +55,7 @@ def get_stats(sheetname, uses_spec_tracker):
     nether_col.pop(0)
     rta_col = wks.get_col(col=headers.index("RTA") + 1, returnas='matrix', include_tailing_empty=True)
     rta_col.pop(0)
-    if uses_spec_tracker:
+    if tracker_version in [2, 3]:
         rta_since_prev_col = wks.get_col(col=headers.index("RTA Since Prev") + 1, returnas='matrix', include_tailing_empty=True)
         rta_since_prev_col.pop(0)
     nether_count = 0
@@ -65,7 +65,7 @@ def get_stats(sheetname, uses_spec_tracker):
         nether_cell = nether_col[i]
         rta_cell = rta_col[i]
         rta_cell = timedelta(hours=int(rta_cell[0:1]), minutes=int(rta_cell[2:4]), seconds=int(rta_cell[5:7]))
-        if uses_spec_tracker:
+        if tracker_version in [2, 3]:
             rta_since_prev_cell = rta_since_prev_col[i]
             rta_since_prev_cell = timedelta(hours=int(rta_since_prev_cell[0:1]), minutes=int(rta_since_prev_cell[2:4]), seconds=int(rta_since_prev_cell[5:7]))
             rta_sum += (rta_cell + rta_since_prev_cell)
@@ -137,10 +137,7 @@ def makeplots(scatterplot1, histogram1):
 
     for runner in runners:
         for i in range(len(runner['sheet_names'])):
-            uses_spec_tracker = True
-            if runner['tracker_versions'][i] == 1:
-                uses_spec_tracker = False
-            nph, avgEnter, entry_dist = get_stats(runner['sheet_names'][i], uses_spec_tracker)
+            nph, avgEnter, entry_dist = get_stats(runner['sheet_names'][i], runner['tracker_versions'][i])
             nph_list.append(nph)
             avgEnter_list.append(avgEnter)
             entry_dist_list.append(entry_dist)
