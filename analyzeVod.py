@@ -215,8 +215,13 @@ def download_all_vods():
     for runner in runners:
         username_list.append(runner['twitch_name'])
     usernames, links, start_times = get_streams_info(username_list)
+    existing_vod_paths = sorted(os.listdir(path1 + "vods"))
+    last_vod = Path(existing_vod_paths[len(existing_vod_paths) - 1])
+    last_vod_name = last_vod.parts[len(last_vod.parts) - 1]
+    start_count = int(last_vod_name[0:4]) + 1
+
     for i in range(len(links)):
-        download_vod(links[i], str(i).zfill(4) + usernames[i])
+        download_vod(links[i], str(i + start_count).zfill(4) + usernames[i])
         vodInfo = (usernames[i], links[i], start_times[i], str(i).zfill(4))
         with open('D:/ResetEfficiency/vodInfo.txt', 'a') as f:
             for item in list(vodInfo):
@@ -257,4 +262,4 @@ def analyze_all_vods():
         write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[vod_num])
 
 
-analyze_all_vods()
+download_all_vods()

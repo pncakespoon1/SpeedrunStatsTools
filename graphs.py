@@ -1,19 +1,13 @@
-import matplotlib.colors
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pygsheets
 import json
 from datetime import timedelta
-from datetime import datetime
 import math
-from matplotlib import cm
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import random
-from matplotlib import axes
-from matplotlib import transforms
-import scipy
+import gc
+import statistics
 
 
 path1 = "D:/ResetEfficiency/"
@@ -23,8 +17,9 @@ jsonFile1 = open(path1 + "runners.json")
 runners = json.load(jsonFile1)
 jsonFile2 = open(path1 + 'effscore_keys.json')
 effscore_keys = json.load(jsonFile2)
-scatterplot1_color_palette = {0: (0, 1, 0)}
 target_time = 600
+batch_size_1 = 4000
+batch_size_2 = 20
 
 
 def get_sheet(sheetname):
@@ -33,19 +28,9 @@ def get_sheet(sheetname):
     return wks
 
 
-def get_distribution(sheetname, colname):
-    wks = get_sheet(sheetname)
-    headers = wks.get_row(row=0, returnas='matrix', include_tailing_empty=False)
-    column = wks.get_col(col=headers.index(colname) + 1, returnas='matrix', include_tailing_empty=False)
-    column.pop(0)
-    for cell in column:
-        if cell == '':
-            column.remove('')
-    return column
-
-
-def get_stats(sheetname, tracker_version):
+def get_stats(sheetname, tracker_version, use_subset, min_row, max_row):
     print(sheetname)
+    gc.collect()
     entry_dist = []
     randomized_entry_dist = []
     entry_labels = []
@@ -59,11 +44,15 @@ def get_stats(sheetname, tracker_version):
     rta_col.pop(0)
     bt_col = wks.get_col(col=headers.index("BT") + 1, returnas='matrix', include_tailing_empty=True)
     bt_col.pop(0)
-    shipwreck_col = wks.get_col(col=headers.index("shipwreck") + 1, returnas='matrix', include_tailing_empty=True)
-    shipwreck_col.pop(0)
+    if use_subset:
+        nether_col = nether_col[min_row:max_row]
+        rta_col = rta_col[min_row:max_row]
+        bt_col = bt_col[min_row:max_row]
     if tracker_version in [2, 3]:
         rta_since_prev_col = wks.get_col(col=headers.index("RTA Since Prev") + 1, returnas='matrix', include_tailing_empty=True)
         rta_since_prev_col.pop(0)
+        if use_subset:
+            rta_since_prev_col = rta_since_prev_col[min_row:max_row]
     nether_count = 0
     entry_sum = timedelta(seconds=0)
     rta_sum = timedelta(seconds=0)
@@ -85,10 +74,8 @@ def get_stats(sheetname, tracker_version):
             entry_dist.append((nether_cell) / timedelta(seconds=1))
             if bt_col[i] != '':
                 entry_labels.append('bt')
-            elif shipwreck_col[i] != '':
-                entry_labels.append('shipwreck')
             else:
-                entry_labels.append('other')
+                entry_labels.append('non-bt')
 
     hours = rta_sum / one_hour
     nph = nether_count / hours
@@ -98,7 +85,16 @@ def get_stats(sheetname, tracker_version):
         index = random.randrange(0, len(entry_dist))
         randomized_entry_dist.append(entry_dist[index])
         randomized_entry_labels.append(entry_labels[index])
-    return nph, avgEnter, randomized_entry_dist, randomized_entry_labels
+    stdevEnter = statistics.stdev(randomized_entry_dist)
+    avgRTA = rta_sum / len(rta_col)
+    return nph, avgEnter, stdevEnter, randomized_entry_dist, randomized_entry_labels, avgRTA
+
+
+def get_efficiencyScore(nph, entry_distribution):
+    sum = 0
+    for entry in entry_distribution:
+        sum += effscore_keys[1][effscore_keys[0].index(5 * (math.floor((target_time - entry) / 5)))]
+    return (nph * sum / len(entry_distribution))
 
 
 def make_scatterplot1(nph_list, avgEnter_list, sheetname_list):
@@ -119,7 +115,24 @@ def make_scatterplot1(nph_list, avgEnter_list, sheetname_list):
     fig1, ax1 = plt.subplots(figsize=(6, 4))
     p1 = plt.contourf(x, y, canvas, levels=1000)
     p2 = sns.scatterplot(x='nph', y='avgEnter', data=dict1, legend=False)
-    plt.savefig(path1 + 'figures/plot1.png', dpi=1000)
+    plt.savefig(path1 + 'figures/scatterplot1.png', dpi=1000)
+    plt.close()
+
+
+def make_scatterplot2(nph_list, entry_dist_list, entry_labels_list):
+    efficiencyScore_list = []
+    bt_proportion_list = []
+    for i in range(len(nph_list)):
+        efficiencyScore_list.append(get_efficiencyScore(nph_list[i], entry_dist_list[i]))
+        bt_label_count = 0
+        for label in entry_labels_list:
+            if label == 'bt':
+                bt_label_count += 1
+        bt_proportion_list.append(bt_label_count / len(entry_labels_list[i]))
+
+    dict1 = {'efficiencyScore': efficiencyScore_list, 'bt_proportion': bt_proportion_list}
+    sns.scatterplot(x='efficiencyScore', y='bt_proportion', data=dict1, legend=False)
+    plt.savefig(path1 + 'figures/scatterplot2.png', dpi=1000)
     plt.close()
 
 
@@ -159,31 +172,63 @@ def make_histogram2(entry_dist_list, entry_labels_list):
             dict1 = {'entry_dist': entry_dist, 'sheetname': entry_labels}
 
             sns.kdeplot(data=dict1, x='entry_dist', hue='sheetname', legend=False, bw_adjust=0.9)
-            plt.savefig(path1 + f'figures/histogram1_{sheetname}.png', dpi=1000)
+            plt.savefig(path1 + f'figures/histogram2_{sheetname}.png', dpi=1000)
             plt.close()
 
 
-def makeplots(scatterplot1, histogram1):
-    nph_list = []
-    avgEnter_list = []
-    entry_dist_list = []
-    entry_labels_list = []
-    sheetname_list = []
+def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
+    nph_list1 = []
+    avgEnter_list1 = []
+    stdevEnter_list1 = []
+    entry_dist_list1 = []
+    entry_labels_list1 = []
+    avgRTA_list1 = []
+    sheetname_list1 = []
+
+    nph_list2 = []
+    avgEnter_list2 = []
+    stdevEnter_list2 = []
+    entry_dist_list2 = []
+    entry_labels_list2 = []
+    avgRTA_list2 = []
+    sheetname_list2 = []
 
     for runner in runners:
-        for i in range(len(runner['sheet_names'])):
-            nph, avgEnter, entry_dist, entry_labels = get_stats(runner['sheet_names'][i], runner['tracker_versions'][i])
-            nph_list.append(nph)
-            avgEnter_list.append(avgEnter)
-            entry_dist_list.append(entry_dist)
-            entry_labels_list.append(entry_labels)
-            sheetname_list.append(runner['sheet_names'][i])
+        for i1 in range(len(runner['sheet_names'])):
+            nph, avgEnter, stdevEnter, entry_dist, entry_labels, avgRTA = get_stats(runner['sheet_names'][i1], runner['tracker_versions'][i1], False, 0, 0)
+            nph_list1.append(nph)
+            avgEnter_list1.append(avgEnter)
+            stdevEnter_list1.append(stdevEnter)
+            entry_dist_list1.append(entry_dist)
+            entry_labels_list1.append(entry_labels)
+            avgRTA_list1.append(avgRTA)
+            sheetname_list1.append(runner['sheet_names'][i1])
+
+            wks = get_sheet(runner['sheet_names'][i1])
+            batch_size = batch_size_2
+            if runner['tracker_versions'][i1] == 1:
+                batch_size = batch_size_1
+            for i2 in range(math.floor((len(wks.get_col(col=1, returnas='matrix', include_tailing_empty=True)) - 1) / batch_size)):
+                nph, avgEnter, stdevEnter, entry_dist, entry_labels, avgRTA = get_stats(runner['sheet_names'][i1], runner['tracker_versions'][i1], False, i2 * batch_size, (i2 + 1) * batch_size)
+                nph_list2.append(nph)
+                avgEnter_list2.append(avgEnter)
+                stdevEnter_list2.append(stdevEnter)
+                entry_dist_list2.append(entry_dist)
+                entry_labels_list2.append(entry_labels)
+                avgRTA_list2.append(avgRTA)
+                sheetname_list2.append(runner['sheet_names'][i1])
 
     if scatterplot1:
-        make_scatterplot1(nph_list, avgEnter_list, sheetname_list)
+        make_scatterplot1(nph_list1, avgEnter_list1, sheetname_list1)
+
+    if scatterplot2:
+        make_scatterplot2(nph_list2, entry_dist_list2, entry_labels_list2)
 
     if histogram1:
-        make_histogram1(entry_dist_list)
+        make_histogram1(entry_dist_list1)
+
+    if histogram2:
+        make_histogram2(entry_dist_list1, entry_labels_list1)
 
 
-makeplots(False, False)
+makeplots(True, True, True, True)
