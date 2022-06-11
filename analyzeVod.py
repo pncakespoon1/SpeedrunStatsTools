@@ -24,8 +24,13 @@ max_videos_per_user = 10
 model = tf.keras.models.load_model(path1 + 'models/model1')
 user_index = -1
 
-jsonFile = open(path1 + "runners.json")
-runners = json.load(jsonFile)
+jsonFile1 = open(path1 + "runners.json")
+runners = json.load(jsonFile1)
+
+jsonFile2 = open(path1 + "downloaded_vod_links.json")
+downloaded_vod_links = json.load(jsonFile2)
+
+death_count = 0
 
 
 def download_vod(url, name):
@@ -87,20 +92,20 @@ def download_frames(file):
         frame = frame[200:880, 630:1290]
         frames.append(cur_frame)
         cv2.imwrite(path1 + "frames/" + str(cur_frame) + ".png", frame)
-        cv2.imshow('window', frame)
         if cv2.waitKey(1) == ord('q'):
             break
 
     video.release()
-    cv2.destroyAllWindows()
 
     return frames
 
 
 def make_dataset():
+    global death_count
     dataset = []
     X = []
     Y = []
+    frame_dirs = []
     images = os.listdir(path1 + "frames")
     count1 = 0
     for image in images:
@@ -116,13 +121,16 @@ def make_dataset():
                 if not error_flag:
                     img = cv2.imread(path1 + "frames" + "/" + image)
                     dataset.append((img, image))
-                os.remove(path1 + "frames/" + image)
+                    frame_dirs.append(image)
 
     for input1, input2 in dataset:
         X.append(input1)
         Y.append(input2)
 
     X = np.array(X)
+
+    for name in frame_dirs:
+        os.remove(path1 + "frames/" + name)
 
     return (X, Y)
 
@@ -146,7 +154,12 @@ def get_timestamps(vodpath, start_time):
 
 
 def write_to_gsheets(sheetnames, vodpath, start_time):
+    print('start_time: ')
+    print(start_time)
     gc_sheets = pygsheets.authorize(service_file=path1 + "credentials.json")
+    bt_timestamps = get_timestamps(vodpath, start_time)
+    print('bt_timestamps: ')
+    print(bt_timestamps)
     for sheetname in sheetnames:
         sh = gc_sheets.open(sheetname)
         wks = sh[1]
@@ -155,7 +168,6 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
             column_num = 41
         if runners[user_index]['tracker_versions'][sheetnames.index(sheetname)] == 3:
             column_num = 31
-        bt_timestamps = get_timestamps(vodpath, start_time)
         tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=False)
         for i in range(1, len(tracker_timestamps) - 1):
             flag = False
@@ -221,45 +233,56 @@ def download_all_vods():
     start_count = int(last_vod_name[0:4]) + 1
 
     for i in range(len(links)):
-        download_vod(links[i], str(i + start_count).zfill(4) + usernames[i])
-        vodInfo = (usernames[i], links[i], start_times[i], str(i).zfill(4))
-        with open('D:/ResetEfficiency/vodInfo.txt', 'a') as f:
-            for item in list(vodInfo):
-                f.writelines(item + '\n')
-            f.writelines('\n')
-        for dir in Path('C:/Users/thoma/AppData/Local/Temp/twitch-dl').glob('*'):
-            for file in Path((str(dir) + '/chunked')).glob('*'):
-                os.remove(file)
+        if not (links[i] in downloaded_vod_links):
+            download_vod(links[i], str(i + start_count).zfill(4) + usernames[i])
+            downloaded_vod_links.append(links[i])
+            vodInfo = (usernames[i], links[i], start_times[i], str(i + start_count).zfill(4))
+            with open('D:/ResetEfficiency/vodInfo.txt', 'a') as f:
+                for item in list(vodInfo):
+                    f.writelines(item + '\n')
+                f.writelines('\n')
+            for dir in Path('C:/Users/thoma/AppData/Local/Temp/twitch-dl').glob('*'):
+                for file in Path((str(dir) + '/chunked')).glob('*'):
+                    os.remove(file)
     return usernames, start_times
 
 
 def analyze_all_vods():
     global user_index
-    username_list = []
-    for runner in runners:
-        username_list.append(runner['twitch_name'])
     usernames = []
     start_times = []
+    vod_ids = []
     total_lines = 0
     with open('D:/ResetEfficiency/vodInfo.txt', "r+") as vodInfo:
         mm = mmap.mmap(vodInfo.fileno(), 0)
         while mm.readline():
             total_lines += 1
-        for i in range(total_lines):
+        for i1 in range(total_lines):
             line = vodInfo.readline()
             line = line.replace('\n', '')
-            if i % 5 == 0:
+            if i1 % 5 == 0:
                 usernames.append(line)
-            if i % 5 == 2:
+            if i1 % 5 == 2:
                 start_times.append(line)
-    for vodpath in Path(path1 + "vods").glob("*.mp4"):
-        parts = list(vodpath.parts)
-        vod = parts[len(parts) - 1]
-        for i in range(len(username_list)):
-            if username_list[i] in vod:
-                user_index = i
-        vod_num = int(vod[0:4])
-        write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[vod_num])
+            if i1 % 5 == 3:
+                vod_ids.append(int(line[0:4]))
+    if len(os.listdir(path1 + 'vods')) == len(vod_ids):
+        for i2 in range(len(vod_ids)):
+            vodpath = Path(path1 + "vods/" + str(vod_ids[i2]).zfill(4) + usernames[i2] + '.mp4')
+            parts = list(vodpath.parts)
+            vod = parts[len(parts) - 1]
+            print(str(vod_ids[i2]).zfill(4) + usernames[i2] + '.mp4')
+            for i3 in range(len(runners)):
+                if runners[i3]['twitch_name'] in vod:
+                    user_index = i3
+            if usernames[i2] == 'zylenox' and not (5 < int(start_times[i2][8:10]) < 11):
+                write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[i2])
+#                try:
+#                    write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[i2])
+#                except:
+#                    print("error1")
+    else:
+        print("error2")
 
 
-download_all_vods()
+analyze_all_vods()

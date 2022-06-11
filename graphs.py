@@ -93,11 +93,12 @@ def get_stats(sheetname, tracker_version, use_subset, min_row, max_row):
 def get_efficiencyScore(nph, entry_distribution):
     sum = 0
     for entry in entry_distribution:
-        sum += effscore_keys[1][effscore_keys[0].index(5 * (math.floor((target_time - entry) / 5)))]
-    return (nph * sum / len(entry_distribution))
+        if 390 <= (5 * (math.floor((target_time - entry) / 5))) <= 600:
+            sum += effscore_keys[1][effscore_keys[0].index(5 * (math.floor((target_time - entry) / 5)))]
+    return nph * sum / len(entry_distribution)
 
 
-def make_scatterplot1(nph_list, avgEnter_list, sheetname_list):
+def make_scatterplot1(nph_list, avgEnter_list, sheetname_list, runner_list):
     canvas = []
     for x in range(60, 140):
         canvas.append([])
@@ -106,7 +107,7 @@ def make_scatterplot1(nph_list, avgEnter_list, sheetname_list):
             effscore = (x / 10) * effscore_keys[1][effscore_keys[0].index(5 * (math.floor((target_time - y) / 5)))]
             (canvas[x - 60]).append(effscore)
 
-    dict1 = {'nph': nph_list, 'avgEnter': avgEnter_list, 'sheetname': sheetname_list}
+    dict1 = {'nph': nph_list, 'avgEnter': avgEnter_list, 'runner': runner_list, 'sheetname': sheetname_list}
 
     x1 = np.linspace(6, 14.0, 60)
     x2 = np.linspace(90, 150, 80)
@@ -114,12 +115,12 @@ def make_scatterplot1(nph_list, avgEnter_list, sheetname_list):
     cm = plt.cm.get_cmap('cividis')
     fig1, ax1 = plt.subplots(figsize=(6, 4))
     p1 = plt.contourf(x, y, canvas, levels=1000)
-    p2 = sns.scatterplot(x='nph', y='avgEnter', data=dict1, legend=False)
+    p2 = sns.scatterplot(x='nph', y='avgEnter', hue='runner', data=dict1, legend=False)
     plt.savefig(path1 + 'figures/scatterplot1.png', dpi=1000)
     plt.close()
 
 
-def make_scatterplot2(nph_list, entry_dist_list, entry_labels_list):
+def make_scatterplot2(nph_list, entry_dist_list, entry_labels_list, runner_list):
     efficiencyScore_list = []
     bt_proportion_list = []
     for i in range(len(nph_list)):
@@ -130,9 +131,39 @@ def make_scatterplot2(nph_list, entry_dist_list, entry_labels_list):
                 bt_label_count += 1
         bt_proportion_list.append(bt_label_count / len(entry_labels_list[i]))
 
-    dict1 = {'efficiencyScore': efficiencyScore_list, 'bt_proportion': bt_proportion_list}
-    sns.scatterplot(x='efficiencyScore', y='bt_proportion', data=dict1, legend=False)
+    dict1 = {'efficiencyScore': efficiencyScore_list, 'bt_proportion': bt_proportion_list, 'runner': runner_list}
+    sns.scatterplot(x='efficiencyScore', y='bt_proportion', hue='runner', data=dict1, legend=False)
     plt.savefig(path1 + 'figures/scatterplot2.png', dpi=1000)
+    plt.close()
+
+
+def make_scatterplot3(nph_list, entry_labels_list, runner_list):
+    bt_proportion_list = []
+    for i in range(len(nph_list)):
+        bt_label_count = 0
+        for label in entry_labels_list:
+            if label == 'bt':
+                bt_label_count += 1
+        bt_proportion_list.append(bt_label_count / len(entry_labels_list[i]))
+
+    dict1 = {'nph': nph_list, 'bt_proportion': bt_proportion_list, 'runner': runner_list}
+    sns.scatterplot(x='nph', y='bt_proportion', hue='runner', data=dict1, legend=False)
+    plt.savefig(path1 + 'figures/scatterplot3.png', dpi=1000)
+    plt.close()
+
+
+def make_scatterplot4(avgEnter_list, entry_labels_list, runner_list):
+    bt_proportion_list = []
+    for i in range(len(avgEnter_list)):
+        bt_label_count = 0
+        for label in entry_labels_list:
+            if label == 'bt':
+                bt_label_count += 1
+        bt_proportion_list.append(bt_label_count / len(entry_labels_list[i]))
+
+    dict1 = {'avgEnter': avgEnter_list, 'bt_proportion': bt_proportion_list, 'runner': runner_list}
+    sns.scatterplot(x='avgEnter', y='bt_proportion', hue='runner', data=dict1, legend=False)
+    plt.savefig(path1 + 'figures/scatterplot4.png', dpi=1000)
     plt.close()
 
 
@@ -176,7 +207,7 @@ def make_histogram2(entry_dist_list, entry_labels_list):
             plt.close()
 
 
-def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
+def makeplots(scatterplot1, scatterplot2, scatterplot3, scatterplot4, histogram1, histogram2):
     nph_list1 = []
     avgEnter_list1 = []
     stdevEnter_list1 = []
@@ -184,6 +215,7 @@ def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
     entry_labels_list1 = []
     avgRTA_list1 = []
     sheetname_list1 = []
+    runner_list1 = []
 
     nph_list2 = []
     avgEnter_list2 = []
@@ -192,6 +224,7 @@ def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
     entry_labels_list2 = []
     avgRTA_list2 = []
     sheetname_list2 = []
+    runner_list2 = []
 
     for runner in runners:
         for i1 in range(len(runner['sheet_names'])):
@@ -203,6 +236,7 @@ def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
             entry_labels_list1.append(entry_labels)
             avgRTA_list1.append(avgRTA)
             sheetname_list1.append(runner['sheet_names'][i1])
+            runner_list1.append(runner['twitch_name'])
 
             wks = get_sheet(runner['sheet_names'][i1])
             batch_size = batch_size_2
@@ -217,12 +251,19 @@ def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
                 entry_labels_list2.append(entry_labels)
                 avgRTA_list2.append(avgRTA)
                 sheetname_list2.append(runner['sheet_names'][i1])
+                runner_list2.append(runner['twitch_name'])
 
     if scatterplot1:
-        make_scatterplot1(nph_list1, avgEnter_list1, sheetname_list1)
+        make_scatterplot1(nph_list1, avgEnter_list1, sheetname_list1, runner_list1)
 
     if scatterplot2:
-        make_scatterplot2(nph_list2, entry_dist_list2, entry_labels_list2)
+        make_scatterplot2(nph_list2, entry_dist_list2, entry_labels_list2, runner_list2)
+
+    if scatterplot3:
+        make_scatterplot3(nph_list2, entry_labels_list2, runner_list2)
+
+    if scatterplot4:
+        make_scatterplot4(avgEnter_list2, entry_labels_list2, runner_list2)
 
     if histogram1:
         make_histogram1(entry_dist_list1)
@@ -231,4 +272,4 @@ def makeplots(scatterplot1, scatterplot2, histogram1, histogram2):
         make_histogram2(entry_dist_list1, entry_labels_list1)
 
 
-makeplots(True, True, True, True)
+makeplots(True, True, True, True, True, True)
