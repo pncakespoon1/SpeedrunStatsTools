@@ -35,6 +35,17 @@ def get_stats(sheetname, tracker_version, use_subset, min_row, max_row):
     randomized_entry_dist = []
     entry_labels = []
     randomized_entry_labels = []
+    entry_structure1 = []
+    randomized_entry_structure1 = []
+    entry_structure2 = []
+    randomized_entry_structure2 = []
+    entry_exit = []
+    randomized_entry_exit = []
+    entry_stronghold = []
+    randomized_entry_stronghold = []
+    exit_label = 'Eyes Crafted'
+    if tracker_version in [2, 3]:
+        exit_label = 'Nether Exit'
     one_hour = timedelta(hours=1)
     wks = get_sheet(sheetname)
     headers = wks.get_row(row=1, returnas='matrix', include_tailing_empty=False)
@@ -44,6 +55,14 @@ def get_stats(sheetname, tracker_version, use_subset, min_row, max_row):
     rta_col.pop(0)
     bt_col = wks.get_col(col=headers.index("BT") + 1, returnas='matrix', include_tailing_empty=True)
     bt_col.pop(0)
+    bastion_col = wks.get_col(col=headers.index("Bastion") + 1, returnas='matrix', include_tailing_empty=True)
+    bastion_col.pop(0)
+    fortress_col = wks.get_col(col=headers.index("Fortress") + 1, returnas='matrix', include_tailing_empty=True)
+    fortress_col.pop(0)
+    exit_col = wks.get_col(col=headers.index(exit_label) + 1, returnas='matrix', include_tailing_empty=True)
+    exit_col.pop(0)
+    stronghold_col = wks.get_col(col=headers.index("Stronghold") + 1, returnas='matrix', include_tailing_empty=True)
+    stronghold_col.pop(0)
     if use_subset:
         nether_col = nether_col[min_row:max_row]
         rta_col = rta_col[min_row:max_row]
@@ -56,26 +75,54 @@ def get_stats(sheetname, tracker_version, use_subset, min_row, max_row):
     nether_count = 0
     entry_sum = timedelta(seconds=0)
     rta_sum = timedelta(seconds=0)
-    for i in range(len(nether_col)):
-        nether_cell = nether_col[i]
-        rta_cell = rta_col[i]
+    for cell_num in range(len(nether_col)):
+        nether_cell = nether_col[cell_num]
+        rta_cell = rta_col[cell_num]
         rta_cell = timedelta(hours=int(rta_cell[0:1]), minutes=int(rta_cell[2:4]), seconds=int(rta_cell[5:7]))
         if tracker_version in [2, 3]:
-            rta_since_prev_cell = rta_since_prev_col[i]
+            rta_since_prev_cell = rta_since_prev_col[cell_num]
             rta_since_prev_cell = timedelta(hours=int(rta_since_prev_cell[0:1]), minutes=int(rta_since_prev_cell[2:4]), seconds=int(rta_since_prev_cell[5:7]))
             rta_sum += (rta_cell + rta_since_prev_cell)
         else:
             rta_sum += rta_cell
+        bastion_cell = bastion_col[cell_num]
+        if bastion_cell != '':
+            bastion_cell = timedelta(hours=int(bastion_cell[0:1]), minutes=int(bastion_cell[2:4]), seconds=int(bastion_cell[5:7]))
+        fortress_cell = fortress_col[cell_num]
+        if fortress_cell != '':
+            fortress_cell = timedelta(hours=int(fortress_cell[0:1]), minutes=int(fortress_cell[2:4]), seconds=int(fortress_cell[5:7]))
+        exit_cell = exit_col[cell_num]
+        if exit_cell != '':
+            exit_cell = timedelta(hours=int(exit_cell[0:1]), minutes=int(exit_cell[2:4]), seconds=int(exit_cell[5:7]))
+        stronghold_cell = stronghold_col[cell_num]
+        if stronghold_cell != '':
+            stronghold_cell = timedelta(hours=int(stronghold_cell[0:1]), minutes=int(stronghold_cell[2:4]),seconds=int(stronghold_cell[5:7]))
         if nether_cell != '':
             nether_cell = timedelta(hours=int(nether_cell[0:1]), minutes=int(nether_cell[2:4]), seconds=int(nether_cell[5:7]))
             nether_count += 1
             entry_sum += nether_cell
             rta_sum -= (rta_cell - nether_cell)
             entry_dist.append((nether_cell) / timedelta(seconds=1))
-            if bt_col[i] != '':
+            if bt_col[cell_num] != '':
                 entry_labels.append('bt')
             else:
                 entry_labels.append('non-bt')
+            if fortress_cell == '':
+                entry_structure1.append(bastion_cell)
+                entry_structure2.append(fortress_cell)
+            else:
+                if bastion_cell == '':
+                    entry_structure1.append(fortress_cell)
+                    entry_structure2.append(bastion_cell)
+                else:
+                    if bastion_cell < fortress_cell:
+                        entry_structure1.append(bastion_cell)
+                        entry_structure2.append(fortress_cell)
+                    else:
+                        entry_structure1.append(fortress_cell)
+                        entry_structure2.append(bastion_cell)
+            entry_stronghold.append(stronghold_cell)
+            entry_exit.append(exit_cell)
 
     hours = rta_sum / one_hour
     nph = nether_count / hours
@@ -85,9 +132,13 @@ def get_stats(sheetname, tracker_version, use_subset, min_row, max_row):
         index = random.randrange(0, len(entry_dist))
         randomized_entry_dist.append(entry_dist[index])
         randomized_entry_labels.append(entry_labels[index])
+        randomized_entry_structure1.append(entry_structure1[index])
+        randomized_entry_structure2.append(entry_structure2[index])
+        randomized_entry_exit.append(entry_exit[index])
+        randomized_entry_stronghold.append(entry_stronghold[index])
     stdevEnter = statistics.stdev(randomized_entry_dist)
     avgRTA = rta_sum / len(rta_col)
-    return nph, avgEnter, stdevEnter, randomized_entry_dist, randomized_entry_labels, avgRTA
+    return nph, avgEnter, stdevEnter, randomized_entry_dist, randomized_entry_labels, randomized_entry_structure1, randomized_entry_structure2, randomized_entry_exit, randomized_entry_stronghold, avgRTA
 
 
 def get_efficiencyScore(nph, entry_distribution):
@@ -213,6 +264,10 @@ def makeplots(scatterplot1, scatterplot2, scatterplot3, scatterplot4, histogram1
     stdevEnter_list1 = []
     entry_dist_list1 = []
     entry_labels_list1 = []
+    entry_structure1_list1 = []
+    entry_structure2_list1 = []
+    entry_exit_list1 = []
+    entry_stronghold_list1 = []
     avgRTA_list1 = []
     sheetname_list1 = []
     runner_list1 = []
@@ -222,18 +277,26 @@ def makeplots(scatterplot1, scatterplot2, scatterplot3, scatterplot4, histogram1
     stdevEnter_list2 = []
     entry_dist_list2 = []
     entry_labels_list2 = []
+    entry_structure1_list2 = []
+    entry_structure2_list2 = []
+    entry_exit_list2 = []
+    entry_stronghold_list2 = []
     avgRTA_list2 = []
     sheetname_list2 = []
     runner_list2 = []
 
     for runner in runners:
         for i1 in range(len(runner['sheet_names'])):
-            nph, avgEnter, stdevEnter, entry_dist, entry_labels, avgRTA = get_stats(runner['sheet_names'][i1], runner['tracker_versions'][i1], False, 0, 0)
+            nph, avgEnter, stdevEnter, entry_dist, entry_labels, entry_structure1, entry_structure2, entry_exit, entry_stronghold, avgRTA = get_stats(runner['sheet_names'][i1], runner['tracker_versions'][i1], False, 0, 0)
             nph_list1.append(nph)
             avgEnter_list1.append(avgEnter)
             stdevEnter_list1.append(stdevEnter)
             entry_dist_list1.append(entry_dist)
             entry_labels_list1.append(entry_labels)
+            entry_structure1_list1.append(entry_structure1)
+            entry_structure2_list1.append(entry_structure2)
+            entry_exit_list1.append(entry_exit)
+            entry_stronghold_list1.append(entry_stronghold)
             avgRTA_list1.append(avgRTA)
             sheetname_list1.append(runner['sheet_names'][i1])
             runner_list1.append(runner['twitch_name'])
@@ -243,12 +306,16 @@ def makeplots(scatterplot1, scatterplot2, scatterplot3, scatterplot4, histogram1
             if runner['tracker_versions'][i1] == 1:
                 batch_size = batch_size_1
             for i2 in range(math.floor((len(wks.get_col(col=1, returnas='matrix', include_tailing_empty=True)) - 1) / batch_size)):
-                nph, avgEnter, stdevEnter, entry_dist, entry_labels, avgRTA = get_stats(runner['sheet_names'][i1], runner['tracker_versions'][i1], False, i2 * batch_size, (i2 + 1) * batch_size)
+                nph, avgEnter, stdevEnter, entry_dist, entry_labels, entry_structure1, entry_structure2, entry_exit, entry_stronghold, avgRTA = get_stats(runner['sheet_names'][i1], runner['tracker_versions'][i1], False, i2 * batch_size, (i2 + 1) * batch_size)
                 nph_list2.append(nph)
                 avgEnter_list2.append(avgEnter)
                 stdevEnter_list2.append(stdevEnter)
                 entry_dist_list2.append(entry_dist)
                 entry_labels_list2.append(entry_labels)
+                entry_structure1_list2.append(entry_structure1)
+                entry_structure2_list2.append(entry_structure2)
+                entry_exit_list2.append(entry_exit)
+                entry_stronghold_list2.append(entry_stronghold)
                 avgRTA_list2.append(avgRTA)
                 sheetname_list2.append(runner['sheet_names'][i1])
                 runner_list2.append(runner['twitch_name'])

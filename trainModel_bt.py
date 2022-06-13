@@ -79,10 +79,6 @@ def make_dataset(type):
 
 def train_model():
     model = make_model()
-    if len(os.listdir(path1 + "models")) == 0:
-        make_model()
-    else:
-        model = tf.keras.models.load_model(path1 + 'models/model1')
     X_train, y_train, = make_dataset("train_images")
     model.fit(X_train, y_train, epochs=epoch_num, class_weight=weights, batch_size=bs)
     model.save(path1 + 'models/model1')

@@ -1,255 +1,24 @@
 import os
-from PIL import Image
-import tensorflow as tf
-import numpy as np
-import cv2
-import math
-import pygsheets
 import subprocess
-import re
 from pathlib import Path
-import datetime
-from datetime import timedelta
 import gc
 import mmap
 import json
 
 
 path1 = "D:/ResetEfficiency/"
-
-dsize = (1920, 1080)
-max_images = 2000
-bt_threshold = 0.9
-max_videos_per_user = 10
-model = tf.keras.models.load_model(path1 + 'models/model1')
 user_index = -1
-
 jsonFile1 = open(path1 + "runners.json")
 runners = json.load(jsonFile1)
-
 jsonFile2 = open(path1 + "downloaded_vod_links.json")
 downloaded_vod_links = json.load(jsonFile2)
-
-death_count = 0
-
-
-def download_vod(url, name):
-    subprocess.run(f'twitch-dl download {url} -f mp4 -q source -o {path1}vods/{name}.mp4')
-
-
-def frames_to_time(list1, start_time):
-    start_datetime = datetime.datetime(year=int(start_time[0:4]),
-                                       month=int(start_time[5:7]),
-                                       day=int(start_time[8:10]),
-                                       hour=int(start_time[11:13]),
-                                       minute=int(start_time[14:16]),
-                                       second=int(start_time[17:19]))
-    for i in range(len(list1)):
-        list1[i] = str(list1[i])
-        list1[i] = math.floor(int(list1[i][:len(list1[i])-4]) / runners[user_index]['fps'])
-        seconds = list1[i]
-        seconds = seconds % (24 * 3600)
-        hour = seconds // 3600
-        seconds %= 3600
-        minutes = seconds // 60
-        seconds %= 60
-        timestamp = timedelta(hours=hour, minutes=minutes, seconds=seconds)
-        date_and_time = start_datetime + timedelta(hours=runners[user_index]['timezone']) + timestamp
-        list1[i] = date_and_time
-
-    return list1
-
-
-def get_image_wall(rows, columns, instances, img):
-    new_img_array = []
-    column_size = 1920/columns
-    row_size = 1080/rows
-    count = 0
-    for row in range(rows):
-        new_img_array.append([])
-        for column in range(columns()):
-            if count < instances:
-                new_img = img[(row * row_size):((row+1) * row_size), (column * column_size):((column+1) * column_size)]
-                new_img_array[row].append(new_img)
-                count += 1
-
-    return new_img_array
-
-
-def download_frames(file):
-    frames = []
-    cur_frame = 0
-    video = cv2.VideoCapture(str(file))
-    while video.isOpened():
-        cur_frame += 1
-        if not video.grab():
-            break
-        if cur_frame % runners[user_index]['fps']:
-            continue
-
-        _, frame = video.retrieve()
-        frame = cv2.resize(frame, dsize)
-        frame = frame[200:880, 630:1290]
-        frames.append(cur_frame)
-        cv2.imwrite(path1 + "frames/" + str(cur_frame) + ".png", frame)
-        if cv2.waitKey(1) == ord('q'):
-            break
-
-    video.release()
-
-    return frames
-
-
-def make_dataset():
-    global death_count
-    dataset = []
-    X = []
-    Y = []
-    frame_dirs = []
-    images = os.listdir(path1 + "frames")
-    count1 = 0
-    for image in images:
-        if count1 < max_images:
-            count1 += 1
-            error_flag = False
-            if image.endswith('.png'):
-                try:
-                    img = Image.open(path1 + "frames" + "/" + image)
-                    img.verify()
-                except (IOError, SyntaxError) as e:
-                    error_flag = True
-                if not error_flag:
-                    img = cv2.imread(path1 + "frames" + "/" + image)
-                    dataset.append((img, image))
-                    frame_dirs.append(image)
-
-    for input1, input2 in dataset:
-        X.append(input1)
-        Y.append(input2)
-
-    X = np.array(X)
-
-    for name in frame_dirs:
-        os.remove(path1 + "frames/" + name)
-
-    return (X, Y)
-
-
-def get_timestamps(vodpath, start_time):
-    download_frames(vodpath)
-    bt_timestamps = []
-    while len(os.listdir(path1 + "frames")) != 0:
-        gc.collect()
-        count2 = 0
-        image_data, timestamps = make_dataset()
-        predictions = model.predict(image_data)
-        for i in range(len(predictions)):
-            if predictions[i][0] > bt_threshold:
-                bt_timestamps.append(timestamps[count2])
-            count2 += 1
-    bt_timestamps = frames_to_time(bt_timestamps, start_time)
-
-
-    return bt_timestamps
-
-
-def write_to_gsheets(sheetnames, vodpath, start_time):
-    print('start_time: ')
-    print(start_time)
-    gc_sheets = pygsheets.authorize(service_file=path1 + "credentials.json")
-    bt_timestamps = get_timestamps(vodpath, start_time)
-    print('bt_timestamps: ')
-    print(bt_timestamps)
-    for sheetname in sheetnames:
-        sh = gc_sheets.open(sheetname)
-        wks = sh[1]
-        column_num = 38
-        if runners[user_index]['tracker_versions'][sheetnames.index(sheetname)] == 2:
-            column_num = 41
-        if runners[user_index]['tracker_versions'][sheetnames.index(sheetname)] == 3:
-            column_num = 31
-        tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=False)
-        for i in range(1, len(tracker_timestamps) - 1):
-            flag = False
-            tracker_timestamp_lower = str(tracker_timestamps[i + 1])
-            tracker_timestamp_lower_datetime = datetime.datetime(year=int(tracker_timestamp_lower[0:4]),
-                                                                 month=int(tracker_timestamp_lower[5:7]),
-                                                                 day=int(tracker_timestamp_lower[8:10]),
-                                                                 hour=int(tracker_timestamp_lower[11:13]),
-                                                                 minute=int(tracker_timestamp_lower[14:16]),
-                                                                 second=int(tracker_timestamp_lower[17:19])
-                                                                 )
-            tracker_timestamp_upper = str(tracker_timestamps[i])
-            tracker_timestamp_upper_datetime = datetime.datetime(year=int(tracker_timestamp_upper[0:4]),
-                                                                 month=int(tracker_timestamp_upper[5:7]),
-                                                                 day=int(tracker_timestamp_upper[8:10]),
-                                                                 hour=int(tracker_timestamp_upper[11:13]),
-                                                                 minute=int(tracker_timestamp_upper[14:16]),
-                                                                 second=int(tracker_timestamp_upper[17:19])
-                                                                 )
-            for bt_timestamp in bt_timestamps:
-                if tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime:
-                    if not flag:
-                        wks.update_value((i+2, column_num), str(bt_timestamp))
-                    bt_timestamps.remove(bt_timestamp)
-                    flag = True
-
-
-def get_twitch_id(username):
-    run = subprocess.run(f"twitch api get users -q login={username}", capture_output=True)
-    x = str(run.stdout.decode())
-    id = x[(x.find("id") + 6):(x.find("login") - 10)]
-    id = int(id)
-
-    return id
-
-
-def get_streams_info(usernames):
-    local_username_list = []
-    links = []
-    start_times = []
-    for username in usernames:
-        id = get_twitch_id(username)
-        run = subprocess.run(f"twitch api get /videos -q first={max_videos_per_user} -q type=archive -q user_id={id}", capture_output=True)
-        x = str(run.stdout.decode())
-        links_temp = re.findall("https://www.twitch.tv/videos/\d\d\d\d\d\d\d\d\d\d", x)
-        links = links + links_temp
-
-        for i in range(len(x)):
-            if x[i:(i + 10)] == "created_at":
-                start_times.append((x[(i + 14):(i + 33)]).replace("T", " "))
-                local_username_list.append(username)
-    return local_username_list, links, start_times
-
-
-def download_all_vods():
-    username_list = []
-    for runner in runners:
-        username_list.append(runner['twitch_name'])
-    usernames, links, start_times = get_streams_info(username_list)
-    existing_vod_paths = sorted(os.listdir(path1 + "vods"))
-    last_vod = Path(existing_vod_paths[len(existing_vod_paths) - 1])
-    last_vod_name = last_vod.parts[len(last_vod.parts) - 1]
-    start_count = int(last_vod_name[0:4]) + 1
-
-    for i in range(len(links)):
-        if not (links[i] in downloaded_vod_links):
-            download_vod(links[i], str(i + start_count).zfill(4) + usernames[i])
-            downloaded_vod_links.append(links[i])
-            vodInfo = (usernames[i], links[i], start_times[i], str(i + start_count).zfill(4))
-            with open('D:/ResetEfficiency/vodInfo.txt', 'a') as f:
-                for item in list(vodInfo):
-                    f.writelines(item + '\n')
-                f.writelines('\n')
-            for dir in Path('C:/Users/thoma/AppData/Local/Temp/twitch-dl').glob('*'):
-                for file in Path((str(dir) + '/chunked')).glob('*'):
-                    os.remove(file)
-    return usernames, start_times
+gc.enable()
 
 
 def analyze_all_vods():
     global user_index
     usernames = []
+    links = []
     start_times = []
     vod_ids = []
     total_lines = 0
@@ -262,6 +31,8 @@ def analyze_all_vods():
             line = line.replace('\n', '')
             if i1 % 5 == 0:
                 usernames.append(line)
+            if i1 % 5 == 1:
+                links.append(line)
             if i1 % 5 == 2:
                 start_times.append(line)
             if i1 % 5 == 3:
@@ -272,15 +43,16 @@ def analyze_all_vods():
             parts = list(vodpath.parts)
             vod = parts[len(parts) - 1]
             print(str(vod_ids[i2]).zfill(4) + usernames[i2] + '.mp4')
+            print('link: ' + links[i2])
             for i3 in range(len(runners)):
                 if runners[i3]['twitch_name'] in vod:
                     user_index = i3
-            if usernames[i2] == 'zylenox' and not (5 < int(start_times[i2][8:10]) < 11):
-                write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[i2])
-#                try:
-#                    write_to_gsheets(runners[user_index]['sheet_names'], vodpath, start_times[i2])
-#                except:
-#                    print("error1")
+            if True:
+                dict1 = {'user_index': user_index, 'sheetnames': runners[user_index]['sheet_names'], 'vodpath': str(vodpath), 'start_time': start_times[i2]}
+                with open(path1 + 'arguments.json', 'w') as jsonFile:
+                    json.dump(dict1, jsonFile)
+                results = subprocess.run('py analyzeVod_sub.py')
+                print(results)
     else:
         print("error2")
 
