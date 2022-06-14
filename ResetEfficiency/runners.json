@@ -12,11 +12,11 @@
 	},
 	{
 		"twitch_name": "makattak11",
-		"sheet_names": ["makattak111", "makattak112"],
-		"tracker_versions": [2, 2],
-		"sheet_ideologies": ["5rd mapless", "10rd mapless"],
+		"sheet_names": ["makattak111", "makattak112", "makattak113"],
+		"tracker_versions": [2, 2, 3],
+		"sheet_ideologies": ["5rd mapless", "10rd mapless", "10rd mapless"],
 		"fps": 50,
-		"timezone": -5,
+		"timezone": 0,
 		"instances": 6,
 		"rows": 2,
 		"columns": 3
@@ -27,7 +27,7 @@
 		"tracker_versions": [1],
 		"sheet_ideologies": ["hybrid"],
 		"fps": 60,
-		"timezone": -6,
+		"timezone": -5,
 		"instances": 6,
 		"rows": 2,
 		"columns": 3

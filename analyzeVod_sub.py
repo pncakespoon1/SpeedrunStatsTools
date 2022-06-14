@@ -24,6 +24,11 @@ user_index = arguments['user_index']
 gc.enable()
 
 
+def clear_frames():
+    for file in os.listdir(path1 + 'frames'):
+        os.remove(path1 + 'frames/' + file)
+
+
 def frames_to_time(list1, start_time):
     start_datetime = datetime.datetime(year=int(start_time[0:4]),
                                        month=int(start_time[5:7]),
@@ -90,7 +95,6 @@ def make_dataset():
                     img = cv2.imread(path1 + "frames" + "/" + image)
                     X.append(img)
                     Y.append(image)
-            os.remove(path1 + "frames" + "/" + image)
     X = np.array(X)
     return X, Y
 
@@ -155,3 +159,4 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
 
 
 write_to_gsheets(arguments['sheetnames'], arguments['vodpath'], arguments['start_time'])
+clear_frames()

@@ -37,17 +37,16 @@ def analyze_all_vods():
                 start_times.append(line)
             if i1 % 5 == 3:
                 vod_ids.append(int(line[0:4]))
+    print(links)
     if len(os.listdir(path1 + 'vods')) == len(vod_ids):
         for i2 in range(len(vod_ids)):
             vodpath = Path(path1 + "vods/" + str(vod_ids[i2]).zfill(4) + usernames[i2] + '.mp4')
             parts = list(vodpath.parts)
             vod = parts[len(parts) - 1]
-            print(str(vod_ids[i2]).zfill(4) + usernames[i2] + '.mp4')
-            print('link: ' + links[i2])
             for i3 in range(len(runners)):
                 if runners[i3]['twitch_name'] in vod:
                     user_index = i3
-            if True:
+            if False:
                 dict1 = {'user_index': user_index, 'sheetnames': runners[user_index]['sheet_names'], 'vodpath': str(vodpath), 'start_time': start_times[i2]}
                 with open(path1 + 'arguments.json', 'w') as jsonFile:
                     json.dump(dict1, jsonFile)

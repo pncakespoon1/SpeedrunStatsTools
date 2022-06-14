@@ -59,10 +59,15 @@ def download_all_vods():
             download_vod(links[i], str(i + start_count).zfill(4) + usernames[i])
             downloaded_vod_links.append(links[i])
             vodInfo = (usernames[i], links[i], start_times[i], str(i + start_count).zfill(4))
-            with open('D:/ResetEfficiency/vodInfo.txt', 'a') as f:
+            with open(path1 + 'vodInfo.txt', 'a') as f:
                 for item in list(vodInfo):
                     f.writelines(item + '\n')
                 f.writelines('\n')
+
             for dir in Path('C:/Users/thoma/AppData/Local/Temp/twitch-dl').glob('*'):
                 for file in Path((str(dir) + '/chunked')).glob('*'):
                     os.remove(file)
+    json.dump(downloaded_vod_links, jsonFile2)
+
+
+download_all_vods()
