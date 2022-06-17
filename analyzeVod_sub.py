@@ -14,7 +14,7 @@ import json
 path1 = "D:/ResetEfficiency/"
 dsize = (1920, 1080)
 max_images = 2000
-bt_threshold = 0.9
+bt_threshold = 0.7
 jsonFile1 = open(path1 + "runners.json")
 runners = json.load(jsonFile1)
 jsonFile3 = open(path1 + "arguments.json")
@@ -22,6 +22,8 @@ arguments = json.load(jsonFile3)
 model = tf.keras.models.load_model(path1 + 'models/model1')
 user_index = arguments['user_index']
 gc.enable()
+print('argmuments: ')
+print(arguments)
 
 
 def clear_frames():
@@ -95,6 +97,12 @@ def make_dataset():
                     img = cv2.imread(path1 + "frames" + "/" + image)
                     X.append(img)
                     Y.append(image)
+    count1 = 0
+    for file in images:
+        if count1 < max_images:
+            count1 += 1
+            os.remove(path1 + 'frames/' + file)
+
     X = np.array(X)
     return X, Y
 
@@ -131,17 +139,12 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
             column_num = 41
         if runners[user_index]['tracker_versions'][sheetnames.index(sheetname)] == 3:
             column_num = 31
-        tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=False)
+        headers = wks.get_row(row=1, returnas='matrix', include_tailing_empty=False)
+        tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=True)
+        rta_col = wks.get_col(col=headers.index("RTA") + 1, returnas='matrix', include_tailing_empty=True)
+        iron_col = wks.get_col(col=headers.index("Iron Pickaxe") + 1, returnas='matrix', include_tailing_empty=True)
         for i in range(1, len(tracker_timestamps) - 1):
             flag = False
-            tracker_timestamp_lower = str(tracker_timestamps[i + 1])
-            tracker_timestamp_lower_datetime = datetime.datetime(year=int(tracker_timestamp_lower[0:4]),
-                                                                 month=int(tracker_timestamp_lower[5:7]),
-                                                                 day=int(tracker_timestamp_lower[8:10]),
-                                                                 hour=int(tracker_timestamp_lower[11:13]),
-                                                                 minute=int(tracker_timestamp_lower[14:16]),
-                                                                 second=int(tracker_timestamp_lower[17:19])
-                                                                 )
             tracker_timestamp_upper = str(tracker_timestamps[i])
             tracker_timestamp_upper_datetime = datetime.datetime(year=int(tracker_timestamp_upper[0:4]),
                                                                  month=int(tracker_timestamp_upper[5:7]),
@@ -150,8 +153,16 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
                                                                  minute=int(tracker_timestamp_upper[14:16]),
                                                                  second=int(tracker_timestamp_upper[17:19])
                                                                  )
+            rta_cell = rta_col[i]
+            rta_cell = timedelta(hours=int(rta_cell[0:1]), minutes=int(rta_cell[2:4]), seconds=int(rta_cell[5:7]))
+            tracker_timestamp_lower_datetime = tracker_timestamp_upper_datetime - rta_cell
+            iron_cell = iron_col[i]
+            if iron_cell != '':
+                iron_cell = timedelta(hours=int(iron_cell[0:1]), minutes=int(iron_cell[2:4]), seconds=int(iron_cell[5:7]))
+            else:
+                iron_cell = timedelta(seconds=1)
             for bt_timestamp in bt_timestamps:
-                if tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime:
+                if (tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime) and (iron_cell < timedelta(minutes=1)):
                     if not flag:
                         wks.update_value((i+1, column_num), str(bt_timestamp))
                     bt_timestamps.remove(bt_timestamp)
@@ -159,4 +170,3 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
 
 
 write_to_gsheets(arguments['sheetnames'], arguments['vodpath'], arguments['start_time'])
-clear_frames()
