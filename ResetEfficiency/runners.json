@@ -5,7 +5,7 @@
 		"tracker_versions": [2, 2, 2, 3],
 		"sheet_ideologies": ["hybrid", "hybrid", "hybrid", "hybrid"],
 		"fps": 60,
-		"timezone": -6,
+		"timezone": 0,
 		"instances": 9,
 		"rows": 3,
 		"columns": 3
@@ -38,7 +38,7 @@
 		"tracker_versions": [2, 3],
 		"sheet_ideologies": ["hybrid", "hybrid"],
 		"fps": 60,
-		"timezone": -6,
+		"timezone": 0,
 		"instances": 12,
 		"rows": 3,
 		"columns": 4
@@ -49,7 +49,7 @@
 		"tracker_versions": [1],
 		"sheet_ideologies": ["shipwrecks"],
 		"fps": 60,
-		"timezone": 2,
+		"timezone": 3,
 		"instances": 0,
 		"rows": 0,
 		"columns": 0
@@ -71,7 +71,7 @@
 		"tracker_versions": [1],
 		"sheet_ideologies": ["mapless"],
 		"fps": 60,
-		"timezone": -8,
+		"timezone": -7,
 		"instances": 9,
 		"rows": 3,
 		"columns": 3
@@ -82,7 +82,7 @@
 		"tracker_versions": [3],
 		"sheet_ideologies": ["50ed hybrid"],
 		"fps": 60,
-		"timezone": 2,
+		"timezone": 0,
 		"instances": 9,
 		"rows": 3,
 		"columns": 3

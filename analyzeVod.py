@@ -45,7 +45,7 @@ def analyze_all_vods():
             for i3 in range(len(runners)):
                 if runners[i3]['twitch_name'] in vod:
                     user_index = i3
-            if True:
+            if runners[user_index]['twitch_name'] not in ['makattak11', 'semperzz', 'specnr']:
                 dict1 = {'user_index': user_index, 'sheetnames': runners[user_index]['sheet_names'], 'vodpath': str(vodpath), 'start_time': start_times[i2]}
                 with open(path1 + 'arguments.json', 'w') as jsonFile:
                     json.dump(dict1, jsonFile)

@@ -14,7 +14,7 @@ import json
 path1 = "D:/ResetEfficiency/"
 dsize = (1920, 1080)
 max_images = 2000
-bt_threshold = 0.7
+bt_threshold = 0.5
 jsonFile1 = open(path1 + "runners.json")
 runners = json.load(jsonFile1)
 jsonFile3 = open(path1 + "arguments.json")
@@ -48,7 +48,7 @@ def frames_to_time(list1, start_time):
         minutes = seconds // 60
         seconds %= 60
         timestamp = timedelta(hours=hour, minutes=minutes, seconds=seconds)
-        date_and_time = start_datetime + timedelta(hours=runners[user_index]['timezone']) + timestamp + timedelta(seconds=15)
+        date_and_time = start_datetime + timestamp + timedelta(hours=runners[user_index]['timezone'])
         list1[i] = date_and_time
 
     return list1
@@ -70,6 +70,7 @@ def download_frames(file):
         frame = frame[200:880, 630:1290]
         frames.append(cur_frame)
         cv2.imwrite(path1 + "frames/" + str(cur_frame) + ".png", frame)
+        #cv2.imwrite(path1 + "temp_frames/" + str(cur_frame) + ".png", frame)
         if cv2.waitKey(1) == ord('q'):
             break
 
@@ -143,6 +144,7 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
         tracker_timestamps = wks.get_col(col=1, returnas='matrix', include_tailing_empty=True)
         rta_col = wks.get_col(col=headers.index("RTA") + 1, returnas='matrix', include_tailing_empty=True)
         iron_col = wks.get_col(col=headers.index("Iron Pickaxe") + 1, returnas='matrix', include_tailing_empty=True)
+        wood_col = wks.get_col(col=headers.index("Wood") + 1, returnas='matrix', include_tailing_empty=True)
         for i in range(1, len(tracker_timestamps) - 1):
             flag = False
             tracker_timestamp_upper = str(tracker_timestamps[i])
@@ -157,12 +159,19 @@ def write_to_gsheets(sheetnames, vodpath, start_time):
             rta_cell = timedelta(hours=int(rta_cell[0:1]), minutes=int(rta_cell[2:4]), seconds=int(rta_cell[5:7]))
             tracker_timestamp_lower_datetime = tracker_timestamp_upper_datetime - rta_cell
             iron_cell = iron_col[i]
+            wood_cell = wood_col[i]
             if iron_cell != '':
                 iron_cell = timedelta(hours=int(iron_cell[0:1]), minutes=int(iron_cell[2:4]), seconds=int(iron_cell[5:7]))
             else:
                 iron_cell = timedelta(seconds=1)
+            if wood_cell != '':
+                wood_cell = timedelta(hours=int(wood_cell[0:1]), minutes=int(wood_cell[2:4]), seconds=int(wood_cell[5:7]))
+            else:
+                wood_cell = timedelta(seconds=1)
             for bt_timestamp in bt_timestamps:
-                if (tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime) and (iron_cell < timedelta(minutes=1)):
+                if i == 1 and sheetnames.index(sheetname) == 0:
+                    print(bt_timestamp)
+                if (tracker_timestamp_lower_datetime < bt_timestamp < tracker_timestamp_upper_datetime) and ((wood_cell == '' or iron_cell == '') or ((wood_cell != '' and iron_cell != '') and (iron_cell - wood_cell) < timedelta(seconds=40))) and (rta_cell > timedelta(seconds=10)):
                     if not flag:
                         wks.update_value((i+1, column_num), str(bt_timestamp))
                     bt_timestamps.remove(bt_timestamp)
